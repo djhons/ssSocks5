@@ -2,11 +2,12 @@
 魔改shadowsocks，实现socks5内网穿透。
 ## 服务端ssSocksServer
 
-程序默认在9991端口监听客户端的请求，也可以使用使用-saddr :9991更换端口。</br>
-收到客户端请求后会随机在开启一个端口作为socks5端口。</br>
-例如：</br>
-可使用53126端口作为socks5进入内网。
-![image](https://user-images.githubusercontent.com/102639729/188045710-76cfb32d-13bb-4631-8532-30e8caa005b1.png)
+配置文件中的BindAddr用于接收客户端的链接。</br>
+收到客户端请求后会以Socks5Addr为socks5端口，若收到多个客户端请求便会在Socks5Addr端口的基础上+1，遇到被占用的端口会跳过。</br>
+![image](https://github.com/djhons/ssSocks5/assets/102639729/74d7542a-df6c-46a4-8105-c032c1878f5d)
+![image](https://github.com/djhons/ssSocks5/assets/102639729/4c58d741-e9a6-4e9c-ac5a-88a99967e4ae)
+
+
 
 ## 客户端ssSocksClient
 
