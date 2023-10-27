@@ -2,6 +2,7 @@
 魔改shadowsocks，实现socks5内网穿透。
 ## 服务端ssSocksServer
 
+配置文件固定为同目录的config.ini
 配置文件中的BindAddr用于接收客户端的链接。</br>
 收到客户端请求后会以Socks5Addr为socks5端口，若收到多个客户端请求便会在Socks5Addr端口的基础上+1，遇到被占用的端口会跳过。</br>
 ![image](https://github.com/djhons/ssSocks5/assets/102639729/74d7542a-df6c-46a4-8105-c032c1878f5d)
