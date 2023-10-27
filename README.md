@@ -19,9 +19,7 @@
 
 ### ssSocksServer
 ```
-Usage of ssSocksServer.exe:
-  -saddr string
-        client connect port (default ":9991")
+ssSocksServer.exe:
 ```
 ### ssSocksClient
 ```
