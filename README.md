@@ -8,7 +8,17 @@
 ![image](https://github.com/djhons/ssSocks5/assets/102639729/74d7542a-df6c-46a4-8105-c032c1878f5d)
 ![image](https://github.com/djhons/ssSocks5/assets/102639729/4c58d741-e9a6-4e9c-ac5a-88a99967e4ae)
 
-
+添加企业微信通知机器人
+```
+代理掉辣，兄弟们别急。
+socks5:8.8.8.8:1445          
+client:127.0.0.1:57018
+```
+```
+新上线了一个socks5代理，兄弟们快冲。
+socks5:8.8.8.8:1445          
+client:127.0.0.1:57018
+```
 
 ## 客户端ssSocksClient
 
