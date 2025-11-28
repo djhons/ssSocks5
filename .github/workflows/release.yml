@@ -1,10 +1,17 @@
 name: Build and Release
 
-# 触发机制：当你推送类似 v1.0.0 的 tag 时触发
 on:
+  # 1. 保留标签触发：当你推送 tag (如 v1.0.0) 时自动运行
   push:
     tags:
       - 'v2.0.0'
+  # 2. 新增手动触发：在网页 Actions 页面点击 "Run workflow" 按钮
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: '版本号 (例如 v1.1.0)'
+        required: true
+        default: 'test-build'
 
 permissions:
   contents: write
@@ -15,14 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # 构建 Linux, Windows, macOS
         goos: [linux, windows, darwin]
         goarch: [amd64, arm64]
         exclude:
-          # 排除不常用的架构以节省时间
           - goos: windows
             goarch: arm64
-    
+
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
@@ -35,20 +40,19 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           go_version: "1.21"
-          
-          # 指定 server 代码所在目录
           project_path: "./server"
           binary_name: "server"
           
-          # 【关键修改】禁用 CGO，确保静态编译，兼容 CentOS 7
+          # 关键逻辑：如果是手动触发，使用输入的 tag；如果是 tag 触发，插件会自动识别
+          release_tag: ${{ inputs.tag_name }}
+          
+          # 保持 CGO_ENABLED=0 以兼容 CentOS 7
           env: |
             CGO_ENABLED=0
             
-          # 打包 assets
           extra_files: "README.md"
           asset_name: "server-${{ matrix.goos }}-${{ matrix.goarch }}"
           compress_assets: true
-          md5sum: false
           overwrite: true
 
       # 2. 构建并发布 Client 端
@@ -59,17 +63,16 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           go_version: "1.21"
-          
-          # 指定 client 代码所在目录
           project_path: "./client"
           binary_name: "client"
           
-          # 【关键修改】禁用 CGO，确保静态编译
+          # 同样应用手动输入的 tag
+          release_tag: ${{ inputs.tag_name }}
+          
           env: |
             CGO_ENABLED=0
             
           extra_files: "README.md"
           asset_name: "client-${{ matrix.goos }}-${{ matrix.goarch }}"
           compress_assets: true
-          md5sum: false
           overwrite: true
