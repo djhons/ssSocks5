@@ -1,0 +1,6 @@
+{
+  "server_addr": "127.0.0.1:7000",
+  "client_id": "office_pc",
+  "aes_key": "7472a831abeb633d7c84258ea502c924",
+  "client_pass": "123456"
+}

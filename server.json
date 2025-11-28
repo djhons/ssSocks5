@@ -1,0 +1,6 @@
+{
+  "tunnel_port": "7000",
+  "socks_port": "1080",
+  "aes_key": "7472a831abeb633d7c84258ea502c924",
+  "wecom_webhook": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=<YOUR TOKEN>"
+}
