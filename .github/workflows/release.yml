@@ -1,0 +1,75 @@
+name: Build and Release
+
+# 触发机制：当你推送类似 v1.0.0 的 tag 时触发
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build (${{ matrix.goos }}/${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 构建 Linux, Windows, macOS
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          # 排除不常用的架构以节省时间
+          - goos: windows
+            goarch: arm64
+    
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v4
+
+      # 1. 构建并发布 Server 端
+      - name: Build and Release Server
+        uses: wangyoucao577/go-release-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          go_version: "1.21"
+          
+          # 指定 server 代码所在目录
+          project_path: "./server"
+          binary_name: "server"
+          
+          # 【关键修改】禁用 CGO，确保静态编译，兼容 CentOS 7
+          env: |
+            CGO_ENABLED=0
+            
+          # 打包 assets
+          extra_files: "README.md"
+          asset_name: "server-${{ matrix.goos }}-${{ matrix.goarch }}"
+          compress_assets: true
+          md5sum: false
+          overwrite: true
+
+      # 2. 构建并发布 Client 端
+      - name: Build and Release Client
+        uses: wangyoucao577/go-release-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          go_version: "1.21"
+          
+          # 指定 client 代码所在目录
+          project_path: "./client"
+          binary_name: "client"
+          
+          # 【关键修改】禁用 CGO，确保静态编译
+          env: |
+            CGO_ENABLED=0
+            
+          extra_files: "README.md"
+          asset_name: "client-${{ matrix.goos }}-${{ matrix.goarch }}"
+          compress_assets: true
+          md5sum: false
+          overwrite: true
