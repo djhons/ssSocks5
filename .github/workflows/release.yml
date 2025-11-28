@@ -4,7 +4,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v2.0.0'
 
 permissions:
   contents: write
