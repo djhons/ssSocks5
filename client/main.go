@@ -67,7 +67,7 @@ func runClient() {
 	}
 
 	// 2. 加密层包装
-	cryptoConn, err := common.WrapConn(conn, []byte(cfg.AesKey))
+	cryptoConn, err := common.WrapConn(conn, []byte(cfg.AesKey), true)
 	if err != nil {
 		conn.Close()
 		log.Println("Crypto wrap error:", err)
@@ -103,6 +103,9 @@ func runClient() {
 	// 清除超时
 	conn.SetWriteDeadline(time.Time{})
 
+	// 给底层连接一个读超时兜底，避免服务端不响应时 Accept() 永久阻塞。
+	conn.SetReadDeadline(time.Now().Add(15 * time.Second))
+
 	// 4. 初始化 Yamux 客户端 (开启 KeepAlive)
 	ymConfig := yamux.DefaultConfig()
 	ymConfig.EnableKeepAlive = true
@@ -117,6 +120,9 @@ func runClient() {
 		return
 	}
 	defer session.Close() // 确保退出时关闭 Session
+
+	// 会话建立后清除握手阶段设置的读超时，后续由 yamux keepalive 管控。
+	conn.SetReadDeadline(time.Time{})
 
 	log.Printf("Connected to server as [%s]", cfg.ClientID)
 
@@ -136,12 +142,14 @@ func runClient() {
 func handleSocksRequest(stream net.Conn) {
 	defer stream.Close()
 
-	// 1. 解析请求 (使用严格模式)
+	// 1. 解析请求 (使用严格模式 + 读超时，防止慢速请求占用流)
+	stream.SetReadDeadline(time.Now().Add(10 * time.Second))
 	targetAddr, err := parseSocksRequest(stream)
 	if err != nil {
 		// 解析失败通常是协议错误或攻击，直接关闭即可
 		return
 	}
+	stream.SetReadDeadline(time.Time{})
 
 	// 2. 连接目标服务器
 	targetConn, err := net.DialTimeout("tcp", targetAddr, 10*time.Second)

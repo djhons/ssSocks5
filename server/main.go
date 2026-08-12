@@ -48,9 +48,11 @@ func main() {
 		log.Fatalf("Config error: %v", err)
 	}
 
-	// === 新增：启动时获取公网 IP ===
-	serverIP = getPublicIP()
-	log.Printf("Server Public IP: %s", serverIP)
+	// 异步获取公网 IP，不阻塞监听启动；获取完成前通知会使用回退地址。
+	go func() {
+		serverIP = getPublicIP()
+		log.Printf("Server Public IP: %s", serverIP)
+	}()
 
 	go startTunnelServer()
 	startSocksServer()
@@ -105,7 +107,7 @@ func startTunnelServer() {
 
 func handleClientHandshake(conn net.Conn) {
 	conn.SetDeadline(time.Now().Add(10 * time.Second))
-	cryptoConn, err := common.WrapConn(conn, []byte(cfg.AesKey))
+	cryptoConn, err := common.WrapConn(conn, []byte(cfg.AesKey), false)
 	if err != nil {
 		conn.Close()
 		return
@@ -169,13 +171,12 @@ func handleClientHandshake(conn net.Conn) {
 
 	log.Printf("Client [%s] connected (Password set)", clientID)
 
-	// === 修改核心：格式化通知消息 ===
-	// 格式: client_id 上线\n socks5 ip 端口 socks5用户名 socks5密码
-	notifyMsg := fmt.Sprintf("%s 上线\n socks5 %s %s %s %s",
+	// 格式: client_id 上线\nsocks5 ip 端口 用户名 密码
+	notifyMsg := fmt.Sprintf("%s 上线\nsocks5 %s %s %s %s",
 		clientID,      // Client ID
 		serverIP,      // 公网 IP
 		cfg.SocksPort, // SOCKS5 端口
-		clientID,      // 用户名 (通常SOCKS5用户名和ClientID一致)
+		clientID,      // 用户名 (SOCKS5 用户名与 ClientID 一致)
 		clientPass,    // 密码
 	)
 	go sendWeComNotify(notifyMsg)
@@ -183,6 +184,7 @@ func handleClientHandshake(conn net.Conn) {
 	go func() {
 		<-session.CloseChan()
 		mu.Lock()
+		// 仅当 map 中仍是当前 session 时才删除，避免误删后建立的新 session。
 		if current, ok := clients[clientID]; ok && current.Session == session {
 			delete(clients, clientID)
 			log.Printf("Client [%s] disconnected", clientID)
@@ -212,6 +214,11 @@ func startSocksServer() {
 
 func handleSocks5(conn net.Conn) {
 	defer conn.Close()
+	// 整个握手阶段设置读超时，防止慢速攻击占用连接。
+	deadline := 10 * time.Second
+	conn.SetReadDeadline(time.Now().Add(deadline))
+	defer conn.SetReadDeadline(time.Time{})
+
 	header := make([]byte, 2)
 	if _, err := io.ReadFull(conn, header); err != nil {
 		return
@@ -221,7 +228,9 @@ func handleSocks5(conn net.Conn) {
 	if _, err := io.ReadFull(conn, methods); err != nil {
 		return
 	}
-	conn.Write([]byte{0x05, 0x02})
+	if _, err := conn.Write([]byte{0x05, 0x02}); err != nil {
+		return
+	}
 
 	authHeader := make([]byte, 2)
 	if _, err := io.ReadFull(conn, authHeader); err != nil {
@@ -256,13 +265,18 @@ func handleSocks5(conn net.Conn) {
 		conn.Write([]byte{0x01, 0x01})
 		return
 	}
-	conn.Write([]byte{0x01, 0x00})
+	if _, err := conn.Write([]byte{0x01, 0x00}); err != nil {
+		return
+	}
 
 	stream, err := clientSession.Session.Open()
 	if err != nil {
 		return
 	}
 	defer stream.Close()
+
+	// 鉴权通过后清除握手超时，转而使用空闲超时控制后续传输。
+	conn.SetReadDeadline(time.Time{})
 
 	timeout := DefaultIdleTimeout
 	if cfg.IdleTimeout > 0 {
