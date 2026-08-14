@@ -4,7 +4,7 @@ on:
   # 1. 保留标签触发：当你推送 tag (如 v1.0.0) 时自动运行
   push:
     tags:
-      - 'v2.1'
+      - 'v2.1.0'
   # 2. 新增手动触发：在网页 Actions 页面点击 "Run workflow" 按钮
   workflow_dispatch:
     inputs:
