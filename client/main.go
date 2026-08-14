@@ -9,16 +9,15 @@ import (
 	"log"
 	"net"
 	"os"
-	"socks5-tunnel/common" // 你的加密包
+	"socks5-tunnel/common"
 	"sync"
 	"time"
 )
 
-// Config 增加 ClientPass 字段
 type Config struct {
 	ServerAddr  string `json:"server_addr"`
 	ClientID    string `json:"client_id"`
-	ClientPass  string `json:"client_pass"` // 新增：密码
+	ClientPass  string `json:"client_pass"`
 	AesKey      string `json:"aes_key"`
 	IdleTimeout int    `json:"idle_timeout"`
 }

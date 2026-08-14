@@ -1,0 +1,28 @@
+# 编译产物
+/server_bin
+/client_bin
+/server
+/client
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试与覆盖率
+*.test
+*.out
+coverage.txt
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 本地真实配置（仓库内置的示例配置除外）
+# 如需覆盖默认配置，请在此处排除你自己的配置文件，例如：
+# /server.json
+# /client.json

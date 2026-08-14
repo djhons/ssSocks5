@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"os"
 	"socks5-tunnel/common"
-	"strings" // 新增引入
+	"strings"
 	"sync"
 	"time"
 )
@@ -38,7 +38,7 @@ var (
 		New: func() interface{} { return make([]byte, 32*1024) },
 	}
 	httpClient = &http.Client{Timeout: 5 * time.Second}
-	serverIP   string // 新增：用于存储服务器公网IP
+	serverIP   string // 服务器公网 IP（启动时异步获取）
 )
 
 const DefaultIdleTimeout = 300 * time.Second
@@ -58,7 +58,7 @@ func main() {
 	startSocksServer()
 }
 
-// === 新增：获取公网 IP 的辅助函数 ===
+// getPublicIP 通过外部服务获取本机公网 IP，失败时回退到 127.0.0.1。
 func getPublicIP() string {
 	resp, err := httpClient.Get("https://4.ipw.cn/")
 	if err != nil {
@@ -195,7 +195,6 @@ func handleClientHandshake(conn net.Conn) {
 }
 
 // --- SOCKS5 Server Logic ---
-// (此部分代码保持不变，与原代码一致)
 func startSocksServer() {
 	ln, err := net.Listen("tcp", ":"+cfg.SocksPort)
 	if err != nil {
